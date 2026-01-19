@@ -1,0 +1,146 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Lithe",
+  "scopeName": "text.html.lzr",
+  "patterns": [
+    {
+      "include": "#script-tag-ts"
+    },
+    {
+      "include": "#script-tag-js"
+    },
+    {
+      "include": "#style-tag"
+    },
+    {
+      "include": "#lithe-block"
+    },
+    {
+      "include": "#interpolation"
+    },
+    {
+      "include": "#attributes"
+    },
+    {
+      "include": "text.html.basic"
+    }
+  ],
+  "repository": {
+    "script-tag-ts": {
+      "begin": "(<)(script)([^>]*lang=['\"]ts['\"][^>]*)(\\s*>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.html" },
+        "3": { "patterns": [{ "include": "text.html.basic#tag-stuff" }] },
+        "4": { "name": "punctuation.definition.tag.end.html" }
+      },
+      "end": "(</)(script)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.html" },
+        "3": { "name": "punctuation.definition.tag.end.html" }
+      },
+      "contentName": "source.ts",
+      "patterns": [
+        { "include": "source.ts" }
+      ]
+    },
+    "script-tag-js": {
+      "begin": "(<)(script)([^>]*)(\\s*>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.html" },
+        "3": { "patterns": [{ "include": "text.html.basic#tag-stuff" }] },
+        "4": { "name": "punctuation.definition.tag.end.html" }
+      },
+      "end": "(</)(script)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.html" },
+        "3": { "name": "punctuation.definition.tag.end.html" }
+      },
+      "contentName": "source.js",
+      "patterns": [
+        { "include": "source.js" }
+      ]
+    },
+    "attributes": {
+      "patterns": [
+        {
+          "match": "\\b(bind|on|use|class|style|transition|in|out|animate):([\\w\\$-]+)\\b",
+          "captures": {
+            "1": { "name": "keyword.control.lzr" },
+            "2": { "name": "entity.other.attribute-name.html" }
+          }
+        }
+      ]
+    },
+    "style-tag": {
+      "begin": "(<)(style)([^>]*)(\\s*>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.html" },
+        "3": { "patterns": [{ "include": "text.html.basic#tag-stuff" }] },
+        "4": { "name": "punctuation.definition.tag.end.html" }
+      },
+      "end": "(</)(style)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.html" },
+        "3": { "name": "punctuation.definition.tag.end.html" }
+      },
+      "contentName": "source.css",
+      "patterns": [
+        { "include": "source.css" }
+      ]
+    },
+    "interpolation": {
+      "begin": "{",
+      "beginCaptures": {
+        "0": { "name": "punctuation.section.embedded.begin.lzr" }
+      },
+      "end": "}",
+      "endCaptures": {
+        "0": { "name": "punctuation.section.embedded.end.lzr" }
+      },
+      "contentName": "source.ts",
+      "patterns": [
+        { "include": "source.ts" }
+      ]
+    },
+    "lithe-block": {
+      "patterns": [
+        {
+          "begin": "({#)(if|each|await)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.block.begin.lzr" },
+            "2": { "name": "keyword.control.lzr" }
+          },
+          "end": "(})",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.block.end.lzr" }
+          },
+          "patterns": [
+            { "include": "source.ts" }
+          ]
+        },
+        {
+          "match": "({:)(else if|else|then|catch)\\b[^}]*(})",
+          "captures": {
+            "1": { "name": "punctuation.definition.block.begin.lzr" },
+            "2": { "name": "keyword.control.lzr" },
+            "3": { "name": "punctuation.definition.block.end.lzr" }
+          }
+        },
+        {
+          "match": "({/)(if|each|await)(})",
+          "captures": {
+            "1": { "name": "punctuation.definition.block.begin.lzr" },
+            "2": { "name": "keyword.control.lzr" },
+            "3": { "name": "punctuation.definition.block.end.lzr" }
+          }
+        }
+      ]
+    }
+  }
+}

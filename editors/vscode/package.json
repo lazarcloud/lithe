@@ -1,0 +1,50 @@
+{
+  "name": "lzr-syntax",
+  "displayName": "Lithe Syntax Highlighting",
+  "description": "Syntax highlighting for Lithe (.lzr) files",
+  "version": "0.1.0",
+  "publisher": "lazar",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "scripts": {
+    "install-extension": "rm -f ~/.vscode/extensions/lzr-syntax && mkdir -p ~/.vscode/extensions && ln -sf $(pwd) ~/.vscode/extensions/lzr-syntax && (rm -f ~/.vscode-server/extensions/lzr-syntax && mkdir -p ~/.vscode-server/extensions && ln -sf $(pwd) ~/.vscode-server/extensions/lzr-syntax || true)",
+    "uninstall-extension": "rm -f ~/.vscode/extensions/lzr-syntax && rm -f ~/.vscode-server/extensions/lzr-syntax"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "lzr",
+        "aliases": [
+          "Lithe",
+          "lzr"
+        ],
+        "extensions": [
+          ".lzr"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "lzr",
+        "path": "./snippets.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "lzr",
+        "scopeName": "text.html.lzr",
+        "path": "./syntaxes/lzr.tmLanguage.json",
+        "embeddedLanguages": {
+          "source.js": "javascript",
+          "source.ts": "typescript",
+          "source.css": "css"
+        }
+      }
+    ]
+  }
+}

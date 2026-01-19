@@ -1,0 +1,11 @@
+{
+  "Lithe Script Tag": {
+    "prefix": "lzr-script",
+    "body": [
+      "<script lang=\"ts\">",
+      "\t$0",
+      "</script>"
+    ],
+    "description": "Lithe script block"
+  }
+}
