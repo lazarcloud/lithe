@@ -1,0 +1,22 @@
+<script lang="ts">
+  import { get_forecast } from "./Weather.rs";
+  
+  let city = "San Francisco";
+  let weather = $signal(null);
+
+  async function fetchWeather() {
+    weather.value = await get_forecast(city);
+  }
+</script>
+
+<div class="weather-box">
+  <input bind:value={city} placeholder="Enter city..." />
+  <button on:click={fetchWeather}>Get Weather</button>
+
+  {#if weather.value}
+    <div class="result">
+      <h4>{weather.value.location}</h4>
+      <p>{weather.value.temperature}°C - {weather.value.condition}</p>
+    </div>
+  {/if}
+</div>

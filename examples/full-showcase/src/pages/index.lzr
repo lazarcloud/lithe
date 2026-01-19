@@ -1,0 +1,9 @@
+<layout src="../layouts/MainLayout.lzr">
+  <h1>Welcome to Lithe JS</h1>
+  <p>This page was generated at build time (SSG).</p>
+  
+  <section>
+    <h2>Reactivity Demo</h2>
+    <island src="../components/Counter.lzr" />
+  </section>
+</layout>

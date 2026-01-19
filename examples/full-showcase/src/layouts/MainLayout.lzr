@@ -1,0 +1,20 @@
+<html>
+<head>
+  <title>Lithe JS Showcase</title>
+  <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+  <nav>
+    <a href="/">Home (SSG)</a>
+    <a href="/dashboard">Dashboard (SSR)</a>
+  </nav>
+  
+  <main>
+    <slot />
+  </main>
+  
+  <footer>
+    <p>Built with Lithe JS - The Polyglot Meta Framework</p>
+  </footer>
+</body>
+</html>

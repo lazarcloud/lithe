@@ -1,0 +1,10 @@
+<layout src="../layouts/MainLayout.lzr">
+  <h1>Dashboard</h1>
+  <p>This page is Server-Side Rendered (SSR) for real-time data.</p>
+  
+  <section>
+    <h2>Weather Bridge</h2>
+    <p>The component below calls a Rust function directly from the browser.</p>
+    <island src="../components/Weather.lzr" />
+  </section>
+</layout>

@@ -1,0 +1,29 @@
+<script lang="ts">
+  import { increment, decrement, type CounterState } from "./Counter.rs";
+  
+  // Signals for reactivity
+  let state = $signal<CounterState>({ count: 0 });
+
+  async function handleAdd() {
+    state.value = await increment(state.value);
+  }
+
+  async function handleSub() {
+    state.value = await decrement(state.value);
+  }
+</script>
+
+<div class="counter-island">
+  <h3>Interactive Island</h3>
+  <p>Count: {state.count}</p>
+  <button on:click={handleSub}>-</button>
+  <button on:click={handleAdd}>+</button>
+</div>
+
+<style>
+  .counter-island {
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+</style>

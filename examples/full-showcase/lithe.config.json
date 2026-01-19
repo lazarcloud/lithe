@@ -1,0 +1,14 @@
+{
+  "name": "full-showcase",
+  "version": "1.0.0",
+  "engine": "rust",
+  "rendering": {
+    "mode": "hybrid",
+    "ssg": ["/"],
+    "ssr": ["/dashboard"]
+  },
+  "compiler": {
+    "islands": true,
+    "minify": true
+  }
+}
