@@ -71,6 +71,11 @@ impl Element {
     pub fn child<C: Component + 'static>(&mut self, child: C) {
         self.children.push(Box::new(child));
     }
+
+    pub fn with_child<C: Component + 'static>(mut self, child: C) -> Self {
+        self.child(child);
+        self
+    }
 }
 
 impl Component for Element {
