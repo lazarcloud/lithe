@@ -1,85 +1,69 @@
-# 🗺️ Lithe.rs Implementation Roadmap
+# Lithe.rs Evolutionary Roadmap
 
-This roadmap outlines the step-by-step development of the Lithe.rs framework. Each step is designed to be small, incremental, and highly testable.
+This roadmap is structured into **Functional Milestones**. After each milestone, you will have a working, testable framework with an increasing set of capabilities.
 
 ---
 
-## Phase 1: The Reactive Core (`lithe-core`)
-*Goal: Create the fine-grained reactivity system that avoids the Virtual DOM.*
+## Milestone 1: The Static Renderer (SSR Only)
+*Goal: A pure Rust library that renders HTML strings on the server.*
 
-- [ ] **1.1 Signal Identity:** Define `SignalId` as a lightweight `u32` wrapper.
-- [ ] **1.2 The Arena:** Implement `SignalArena` to store any type of data indexed by `SignalId`. Use a `SlotMap` or similar for stable, O(1) access.
-- [ ] **1.3 Dependency Tracking:** Implement a thread-local "Tracking Stack" to record which signals are accessed during an effect.
-- [ ] **1.4 Basic Signals:** Implement `create_signal<T>(value)`.
-    - **Test:** Verify `signal.get()` returns the value and `signal.set()` updates it.
-- [ ] **1.5 Effects:** Implement `create_effect(f)`. 
-    - **Test:** Verify the function re-runs automatically when a tracked signal changes.
-- [ ] **1.6 Memos:** Implement `create_memo(f)` for derived computations.
-    - **Test:** Verify memos only re-calculate if their dependencies change and are themselves trackable.
-- [ ] **1.7 Batching:** Implement a `batch(|ui| { ... })` function to prevent multiple re-runs during multiple signal updates.
+- [ ] **1.1 The View Trait:** Define `View` with `render_to_string()`.
+- [ ] **1.2 Element Builders:** Implement `div()`, `span()`, `p()`, `button()`.
+- [ ] **1.3 Pattern A (Append):** Support `.child()` and `.push()` for dynamic tree building.
+- [ ] **1.4 Static Attributes:** Support `.class()`, `.id()`, and custom `.attr()`.
+- [ ] **1.5 Unit Test Suite:** Verify complex nested trees render to correct HTML.
+- **Outcome:** You can build a website in Rust and serve it via Axum as static HTML.
 
-## Phase 2: UI Representation & SSR (`lithe-core` / `lithe-ui`)
-*Goal: Represent the UI as a tree of Rust structures that can render to HTML.*
+## Milestone 2: The Reactive Client (WASM Interactivity)
+*Goal: Surgical DOM updates in the browser without re-rendering.*
 
-- [ ] **2.1 The View Trait:** Define a `View` trait with a `render()` method that returns HTML strings.
-- [ ] **2.2 Element Primitives:** Implement the `Element` struct for common tags (`div`, `button`, etc.).
-- [ ] **2.3 Pattern A (Append):** Implement the `.child()` and `.append()` methods for the Builder Pattern.
-    - **Test:** Build a nested tree and verify the generated HTML string matches expectations.
-- [ ] **2.4 Attribute Types:** Create enums for `Attribute` (Id, Class, Value) and `Event` (Click, Input).
-- [ ] **2.5 Suspense:** Implement a `Suspense` component that takes a `Future` and shows a fallback while loading.
-- [ ] **2.6 Error Boundaries:** Implement an `ErrorBoundary` component to catch panics in the UI tree.
+- [ ] **2.1 Signal Arena:** Implement the `SignalArena` (SignalIds and Value storage).
+- [ ] **2.2 Basic Reactivity:** `create_signal`, `create_effect`, and dependency tracking.
+- [ ] **2.3 WASM Mounting:** Implement `mount_to_body()` using `web-sys`.
+- [ ] **2.4 Surgical Binding:** Link a `Signal<String>` to a DOM `TextNode`.
+- [ ] **2.5 Event Listeners:** Implement `.on_click()` using global event delegation.
+- **Outcome:** A "Counter" app where only the number updates in the DOM when the button is clicked.
 
-## Phase 3: WASM Runtime & Resumability (`lithe-core`)
-*Goal: Allow the UI to "wake up" in the browser without re-rendering everything.*
+## Milestone 3: The Resumable Bridge (Automatic State Sync)
+*Goal: State created on the server "wakes up" in the browser without a full reload.*
 
-- [ ] **3.1 DOM Mounting:** Implement `mount_to_body(app)` using `web-sys`.
-- [ ] **3.2 Surgical Text Nodes:** Implement logic to bind a `Signal<String>` to a raw DOM `Text` node.
-    - **Test:** Verify that updating the signal updates the text in the browser WITHOUT touching the parent element.
-- [ ] **3.3 Surgical Attributes:** Implement logic to bind signals to DOM attributes (e.g., `class`, `disabled`).
-- [ ] **3.4 Resumability (Serialization):** Implement logic on the server to serialize the `SignalArena` into a JSON blob inside the HTML.
-- [ ] **3.5 Resumability (Deser/Resume):** Implement logic in WASM to initialize the `SignalArena` from the JSON blob and re-attach event listeners.
+- [ ] **3.1 Arena Serialization:** Use `serde` to turn the Server's Signal Arena into JSON.
+- [ ] **3.2 State Injection:** Automatically inject `<script id="lithe-state">` into the SSR output.
+- [ ] **3.3 Resumption Logic:** WASM client boots by reading the JSON and "resuming" the Arena.
+- [ ] **3.4 Island Markers:** Implement `data-lithe-island` attributes to tell WASM where to attach.
+- **Outcome:** You set a counter to `5` on the server; the browser starts at `5` and continues counting.
 
-## Phase 4: Procedural Macros & The Bridge (`lithe-macros`)
-*Goal: Provide the "Magic" syntax and the cross-tier communication.*
+## Milestone 4: The Cloud Bridge (Type-Safe RPC)
+*Goal: Call server functions from the browser as if they were local.*
 
-- [ ] **4.1 Pattern B (Declarative Macro):** Implement the `div!( ... )` macro to allow HTML-like nesting in Rust.
-- [ ] **4.2 The `#[island]` Macro:** Create a macro that marks a component for WASM compilation and generates the hydration marker.
-- [ ] **4.3 The `#[server]` Macro:**
-    - **SSR mode:** Compiles to an Axum/Actix route.
-    - **WASM mode:** Compiles to a type-safe `fetch()` call.
-- [ ] **4.4 The `#[native]` Macro:**
-    - **Native mode:** Compiles to a Tauri command.
-    - **Client mode:** Compiles to a `tauri::invoke()` call.
-- [ ] **4.5 Middlewares:** Add support for `#[middleware]` on server functions for Auth/Logging.
+- [ ] **4.1 `#[server]` Macro:** Implemet the procedural macro to split logic.
+- [ ] **4.2 RPC Transport:** Implement the Fetch-based client inside `lithe-core`.
+- [ ] **4.3 Simple API Generation:** The compiler generates an Axum route for every `#[server]` function.
+- [ ] **4.4 Async Resources:** Implement `create_resource` to wrap async server calls in a signal.
+- **Outcome:** Clicking a button in WASM triggers a database save on the server with full type safety.
 
-## Phase 5: Routing & Navigation
-*Goal: Support both Website (MPA) and App (SPA) modes.*
+## Milestone 5: The Native Bridge (Desktop & Mobile)
+*Goal: Access OS hardware and file systems via Tauri.*
 
-- [ ] **5.1 URL Matcher:** Implement a basic regex-based router.
-- [ ] **5.2 MPA Mode:** Standard link behavior with full page reloads.
-- [ ] **5.3 SPA Mode:** Client-side routing that intercepts link clicks and performs a WASM-based transition.
-- [ ] **5.4 View Transitions:** Integrate the browser's View Transition API for seamless "morphing" between routes.
+- [ ] **5.1 `#[native]` Macro:** Implement the macro to route calls to the Tauri Main Process.
+- [ ] **5.2 IPC Transport:** Implement `tauri::invoke` integration in the WASM client.
+- [ ] **5.3 Unified Build:** Ensure the CLI can bundle the project into a Tauri app.
+- **Outcome:** One codebase that runs in a browser (calling APIs) and a Desktop app (reading files).
 
-## Phase 6: Full-Stack Features
-*Goal: High-level features for real-world apps.*
+## Milestone 6: The Modern Meta-Framework
+*Goal: Polish the DX with professional-grade features.*
 
-- [ ] **6.1 Universal Storage:** Implement `create_persisted_signal` with drivers for LocalStorage and Server Databases.
-- [ ] **6.2 Form Actions:** Implement the `#[action]` macro for forms with isomorphic validation logic.
-- [ ] **6.3 Optimistic UI:** Add the `.execute_optimistic()` method to Actions for instant UI feedback.
-- [ ] **6.4 Telepathy:** Implement WebSocket sync for `Signal` objects that should live-sync between server and all clients.
+- [ ] **6.1 SPA Routing:** Client-side navigation without page refreshes + View Transitions.
+- [ ] **6.2 Type-Safe Styling:** The `Style` builder and Atomic CSS extraction.
+- [ ] **6.3 Optimistic UI:** `action.execute_optimistic()` with rollback on failure.
+- [ ] **6.4 Telepathy:** WebSocket-based real-time signal syncing.
+- [ ] **6.5 Asset Pipeline:** `img!` and `svg!` compile-time optimization.
+- **Outcome:** A full-featured, competitive Rust alternative to Next.js or Astro.
 
-## Phase 7: Styling & Assets
-*Goal: Type-safety for the "Look and Feel".*
+## Milestone 7: Ecosystem & Distribution
+*Goal: Ship Lithe.rs to the community.*
 
-- [ ] **7.1 Style Builder:** Implement a typed `Style` struct (e.g., `.bg_color(Color::Red)`).
-- [ ] **7.2 Atomic CSS Extractor:** Build a compile-time tool that extracts these styles into a single `.css` file.
-- [ ] **7.3 Asset Macros:** Implement `img!` and `svg!` for compile-time resizing and SVG-to-Rust conversion.
-- [ ] **7.4 Type-Safe i18n:** Implement the `t!` macro that validates keys against translation files at compile time.
-
-## Phase 8: CLI & Distribution (`lithe-cli`)
-*Goal: Ship the framework to the world.*
-
-- [ ] **8.1 Project Scaffolding:** `lithe init` command to generate the 3-tier workspace.
-- [ ] **8.2 Dev Engine:** `lithe dev` with HMR and proxying between Axum and WASM.
-- [ ] **8.3 Cross-Compilation:** `lithe build` targets for Linux, Windows, Mac, Android, iOS, and Web.
-- [ ] **8.4 NPM/Bun Package:** Create the binary wrapper for `@lithe/cli`.
+- [ ] **7.1 The `lithe` CLI:** Finalize `init`, `dev` (with HMR), and `build`.
+- [ ] **7.2 NPM/Bun Wrapper:** Publish the platform-specific binary wrappers.
+- [ ] **7.3 Documentation:** Generate the "Lithe.rs Book" and API references.
+- **Outcome:** Users can `bun install @lithe/cli` and start building apps instantly.
