@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use dialoguer::{theme::ColorfulTheme, Confirm};
+use dialoguer::{Confirm, theme::ColorfulTheme};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
@@ -34,7 +34,12 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     #[command(about = "Initializes a new lithe project")]
-    Init,
+    Init {
+        #[arg(short, long, help = "Project directory", default_value = "my-app")]
+        project_dir: String,
+        #[arg(short, long, help = "Template to use", default_value = "Rust")]
+        template: String,
+    },
     #[command(about = "Starts the main application process")]
     Run {
         #[arg(short, long, help = "Print verbose logs")]
@@ -64,8 +69,11 @@ fn main() -> Result<()> {
         confy::load("lithe-cli", "config").context("Failed to load configuration")?;
 
     match args.command {
-        Commands::Init => {
-            init::handle_init()?;
+        Commands::Init {
+            project_dir,
+            template,
+        } => {
+            init::handle_init(&project_dir, &template)?;
         }
         Commands::Config => {
             println!("Current Configuration:");

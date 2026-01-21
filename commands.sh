@@ -1,0 +1,1 @@
+cargo run -p lithe-cli init -p examples/project -t Rust
