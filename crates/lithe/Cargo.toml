@@ -1,0 +1,9 @@
+[package]
+name = "lithe"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lithe-core = { path = "../lithe-core" }
+lithe-macros = { path = "../lithe-macros" }
+lithe-ui = { path = "../lithe-ui" }

@@ -1,0 +1,25 @@
+{
+  "name": "@lithe/cli",
+  "version": "0.1.0",
+  "description": "The Lithe.rs CLI tool",
+  "main": "bin.js",
+  "bin": {
+    "lithe": "bin.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "rust",
+    "framework",
+    "wasm",
+    "tauri"
+  ],
+  "author": "",
+  "license": "MIT",
+  "optionalDependencies": {
+    "@lithe/cli-linux-x64": "0.1.0",
+    "@lithe/cli-darwin-arm64": "0.1.0",
+    "@lithe/cli-win32-x64": "0.1.0"
+  }
+}

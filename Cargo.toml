@@ -1,5 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "cli"
+    "crates/lithe",
+    "crates/lithe-core",
+    "crates/lithe-macros",
+    "crates/lithe-cli",
+    "crates/lithe-ui",
 ]
