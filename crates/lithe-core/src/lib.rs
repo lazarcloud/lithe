@@ -11,6 +11,34 @@ pub fn render_to_string<C: Component>(component: &C) -> String {
     buf
 }
 
+pub fn doctype() -> &'static str {
+    "<!DOCTYPE html>\n"
+}
+
+impl<A: Component, B: Component> Component for (A, B) {
+    fn render(&self, buf: &mut String) {
+        self.0.render(buf);
+        self.1.render(buf);
+    }
+}
+
+impl<A: Component, B: Component, C: Component> Component for (A, B, C) {
+    fn render(&self, buf: &mut String) {
+        self.0.render(buf);
+        self.1.render(buf);
+        self.2.render(buf);
+    }
+}
+
+impl<A: Component, B: Component, C: Component, D: Component> Component for (A, B, C, D) {
+    fn render(&self, buf: &mut String) {
+        self.0.render(buf);
+        self.1.render(buf);
+        self.2.render(buf);
+        self.3.render(buf);
+    }
+}
+
 impl Component for String {
     fn render(&self, buf: &mut String) {
         buf.push_str(self);

@@ -76,6 +76,30 @@ impl Element {
         self.child(child);
         self
     }
+
+    pub fn class(self, name: &str) -> Self {
+        self.set_attribute("class", name)
+    }
+
+    pub fn id(self, name: &str) -> Self {
+        self.set_attribute("id", name)
+    }
+
+    pub fn lang(self, lang: &str) -> Self {
+        self.set_attribute("lang", lang)
+    }
+
+    pub fn href(self, href: &str) -> Self {
+        self.set_attribute("href", href)
+    }
+
+    pub fn src(self, src: &str) -> Self {
+        self.set_attribute("src", src)
+    }
+
+    pub fn alt(self, alt: &str) -> Self {
+        self.set_attribute("alt", alt)
+    }
 }
 
 impl Component for Element {
@@ -102,6 +126,30 @@ impl VoidElement {
     pub fn set_attribute(mut self, key: &str, value: &str) -> Self {
         self.head.push_attribute(key, value);
         self
+    }
+
+    pub fn class(self, name: &str) -> Self {
+        self.set_attribute("class", name)
+    }
+
+    pub fn id(self, name: &str) -> Self {
+        self.set_attribute("id", name)
+    }
+
+    pub fn src(self, src: &str) -> Self {
+        self.set_attribute("src", src)
+    }
+
+    pub fn alt(self, alt: &str) -> Self {
+        self.set_attribute("alt", alt)
+    }
+
+    pub fn charset(self, charset: &str) -> Self {
+        self.set_attribute("charset", charset)
+    }
+
+    pub fn href(self, href: &str) -> Self {
+        self.set_attribute("href", href)
     }
 }
 
@@ -162,10 +210,34 @@ pub fn li() -> Element {
 pub fn a() -> Element {
     Element::new("a")
 }
+pub fn html() -> Element {
+    Element::new("html")
+}
+pub fn head() -> Element {
+    Element::new("head")
+}
+pub fn body() -> Element {
+    Element::new("body")
+}
+pub fn title() -> Element {
+    Element::new("title")
+}
+pub fn style() -> Element {
+    Element::new("style")
+}
+pub fn script() -> Element {
+    Element::new("script")
+}
 
 pub fn br() -> VoidElement {
     VoidElement::new("br")
 }
 pub fn img() -> VoidElement {
     VoidElement::new("img")
+}
+pub fn meta() -> VoidElement {
+    VoidElement::new("meta")
+}
+pub fn link() -> VoidElement {
+    VoidElement::new("link")
 }
