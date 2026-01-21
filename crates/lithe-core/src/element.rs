@@ -126,6 +126,39 @@ pub fn h1() -> Element {
 pub fn h2() -> Element {
     Element::new("h2")
 }
+pub fn h3() -> Element {
+    Element::new("h3")
+}
+pub fn h4() -> Element {
+    Element::new("h4")
+}
+pub fn h5() -> Element {
+    Element::new("h5")
+}
+pub fn h6() -> Element {
+    Element::new("h6")
+}
+pub fn main_tag() -> Element {
+    Element::new("main")
+}
+pub fn section() -> Element {
+    Element::new("section")
+}
+pub fn header() -> Element {
+    Element::new("header")
+}
+pub fn footer() -> Element {
+    Element::new("footer")
+}
+pub fn nav() -> Element {
+    Element::new("nav")
+}
+pub fn ul() -> Element {
+    Element::new("ul")
+}
+pub fn li() -> Element {
+    Element::new("li")
+}
 pub fn a() -> Element {
     Element::new("a")
 }

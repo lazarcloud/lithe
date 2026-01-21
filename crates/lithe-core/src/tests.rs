@@ -1,4 +1,4 @@
-use crate::{Component, br, div, img, p, render_to_string, span};
+use crate::{br, div, img, p, render_to_string, span, Component};
 
 #[test]
 fn test_basic_element_rendering() {
