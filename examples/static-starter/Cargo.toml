@@ -1,0 +1,7 @@
+[package]
+name = "static-starter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lithe = { path = "../../crates/lithe" }

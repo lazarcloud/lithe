@@ -1,4 +1,4 @@
-mod element;
+pub mod element;
 
 pub use element::*;
 pub trait Component {

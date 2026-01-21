@@ -120,6 +120,12 @@ pub fn span() -> Element {
 pub fn p() -> Element {
     Element::new("p")
 }
+pub fn h1() -> Element {
+    Element::new("h1")
+}
+pub fn h2() -> Element {
+    Element::new("h2")
+}
 pub fn a() -> Element {
     Element::new("a")
 }
