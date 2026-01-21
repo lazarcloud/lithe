@@ -7,4 +7,5 @@ members = [
     "crates/lithe-cli",
     "crates/lithe-ui",
     "examples/static-starter",
+    "examples/project",
 ]
