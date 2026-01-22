@@ -6,7 +6,7 @@ use std::process::Command;
 
 use crate::dev::ensure_cargo_bin_config;
 use crate::generate;
-use crate::wasm;
+use crate::server;
 
 pub fn handle_build(static_site: bool, out_dir: &str) -> Result<()> {
     let project_dir = std::env::current_dir()?;
@@ -33,16 +33,21 @@ pub fn build_wasm_unified(project_dir: &Path) -> Result<()> {
         .find(|l| l.starts_with("name = "))
         .map(|l| l.split('=').nth(1).unwrap().trim().trim_matches('"'))
         .unwrap_or("app");
-    info!("Scanning for #[client] functions...");
+    info!("Scanning for client and server functions...");
 
-    let client_functions = wasm::discover_client_functions(project_dir)?;
-    if client_functions.is_empty() {
-        info!("No #[client] functions found, skipping WASM build");
+    let (client_fns, server_fns) = server::discover_functions(project_dir, project_name)?;
+    if client_fns.is_empty() && server_fns.is_empty() {
+        info!("No client or server functions found, skipping WASM build");
         return Ok(());
     }
 
-    info!("Found {} client functions", client_functions.len());
-    wasm::generate_wasm_exports(project_dir, &client_functions)?;
+    info!(
+        "Found {} client and {} server functions",
+        client_fns.len(),
+        server_fns.len()
+    );
+    server::generate_wasm_exports(project_dir, project_name, &client_fns, &server_fns)?;
+
     info!("Building unified WASM bundle for {}...", project_name);
 
     let pkg_out_dir = project_dir.join(".lithe/public/pkg");
@@ -109,9 +114,11 @@ fn build_binary(project_dir: &Path, out_dir: &str) -> Result<()> {
         if !target_binary.exists() {
             // Try looking up for workspace target
             if let Some(parent) = project_dir.parent() {
-                let workspace_target = parent.parent().unwrap().join("target/release/lithe-app");
-                if workspace_target.exists() {
-                    target_binary = workspace_target;
+                if let Some(ws_root) = parent.parent() {
+                    let workspace_target = ws_root.join("target/release/lithe-app");
+                    if workspace_target.exists() {
+                        target_binary = workspace_target;
+                    }
                 }
             }
         }

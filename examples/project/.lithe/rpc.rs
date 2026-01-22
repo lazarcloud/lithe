@@ -4,9 +4,17 @@ use lithe::rpc::{RpcRequest, RpcResponse};
 
 pub async fn handle_rpc(Json(req): Json<RpcRequest>) -> impl IntoResponse {
     let result = match req.function.as_str() {
-        "get_server_data" | "utils_get_server_data" => {
+        "f_64f1a6e1e5b8c92e" => {
             let args: i32 = serde_json::from_value(req.args).unwrap();
-            rust::utils::__lithe_rpc_get_server_data(args).await
+            rust::pages_test::__lithe_rpc_wrapper_get_data_step_1(args).await
+        }
+        "f_c4ff90b18223fb0c" => {
+            let args: i32 = serde_json::from_value(req.args).unwrap();
+            rust::pages_test::__lithe_rpc_wrapper_get_data_final(args).await
+        }
+        "f_b72c3ddf4f1e0d3b" => {
+            let args: i32 = serde_json::from_value(req.args).unwrap();
+            rust::utils::__lithe_rpc_wrapper_get_server_data(args).await
         }
         _ => return (StatusCode::NOT_FOUND, "Function not found").into_response(),
     };

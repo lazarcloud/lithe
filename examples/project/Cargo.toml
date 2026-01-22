@@ -13,10 +13,13 @@ serde_json = "1.0"
 rust-embed = "8.0"
 mime_guess = "2.0"
 lithe = { path = "../../crates/lithe" }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6", features = ["fs"] }
+sys-info = "0.9.1"
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
 wasm-bindgen = "0.2"

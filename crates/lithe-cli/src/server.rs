@@ -8,50 +8,116 @@ pub struct ServerFunction {
     pub full_path: String,
     pub fn_name: String,
     pub args_type: String,
+    pub hashed_id: String,
 }
 
-pub fn discover_server_functions(project_dir: &Path) -> Result<Vec<ServerFunction>> {
-    let src_dir = project_dir.join("src");
-    let mut functions = Vec::new();
-    if !src_dir.exists() {
-        return Ok(functions);
+#[derive(Debug, Clone)]
+pub struct ClientFunction {
+    pub full_path: String,
+    pub fn_name: String,
+    pub hashed_id: String,
+}
+
+pub fn hash_id_raw(path: &str) -> String {
+    let mut hash: u64 = 5381;
+    for c in path.bytes() {
+        hash = ((hash << 5).wrapping_add(hash)).wrapping_add(c as u64);
     }
-    scan_directory(&src_dir, &src_dir, &mut functions)?;
-    Ok(functions)
+    format!("{:x}", hash)
 }
 
-fn scan_directory(dir: &Path, src_root: &Path, functions: &mut Vec<ServerFunction>) -> Result<()> {
+pub fn hash_id(path: &str) -> String {
+    format!("f_{}", hash_id_raw(path))
+}
+
+pub fn discover_functions(
+    project_dir: &Path,
+    crate_name: &str,
+) -> Result<(Vec<ClientFunction>, Vec<ServerFunction>)> {
+    let src_dir = project_dir.join("src");
+    let mut client_fns = Vec::new();
+    let mut server_fns = Vec::new();
+    if !src_dir.exists() {
+        return Ok((client_fns, server_fns));
+    }
+    scan_directory(
+        &src_dir,
+        &src_dir,
+        crate_name,
+        &mut client_fns,
+        &mut server_fns,
+    )?;
+    Ok((client_fns, server_fns))
+}
+
+fn scan_directory(
+    dir: &Path,
+    src_root: &Path,
+    crate_name: &str,
+    client_fns: &mut Vec<ClientFunction>,
+    server_fns: &mut Vec<ServerFunction>,
+) -> Result<()> {
     for entry in fs::read_dir(dir).context(format!("Failed to read directory: {:?}", dir))? {
         let entry = entry?;
         let path = entry.path();
         if path.is_dir() {
-            scan_directory(&path, src_root, functions)?;
+            let dir_name = path.file_name().unwrap().to_str().unwrap();
+            if dir_name == "public" {
+                continue;
+            }
+            scan_directory(&path, src_root, crate_name, client_fns, server_fns)?;
         } else if path.extension().map_or(false, |ext| ext == "rs") {
-            scan_file(&path, src_root, functions)?;
+            let file_stem = path.file_stem().unwrap().to_str().unwrap();
+            if file_stem == "lib" || file_stem == "main" || file_stem == "mod" {
+                continue;
+            }
+            scan_file(&path, src_root, crate_name, client_fns, server_fns)?;
         }
     }
     Ok(())
 }
 
-fn scan_file(file_path: &Path, src_root: &Path, functions: &mut Vec<ServerFunction>) -> Result<()> {
+fn scan_file(
+    file_path: &Path,
+    src_root: &Path,
+    crate_name: &str,
+    client_fns: &mut Vec<ClientFunction>,
+    server_fns: &mut Vec<ServerFunction>,
+) -> Result<()> {
     let content =
         fs::read_to_string(file_path).context(format!("Failed to read file: {:?}", file_path))?;
-
-    // Regex for #[server] or #[lithe::server]
-    let re = Regex::new(
-        r#"#\[(?:[\w:]+::)?server\]\s*(?:pub(?:\([^)]+\))?\s+)?async\s+fn\s+(\w+)\s*\(([^)]*)\)"#,
-    )
-    .context("Failed to compile regex")?;
 
     let relative = file_path
         .strip_prefix(src_root)
         .context("File not under src root")?;
-    let module_path = relative
+
+    let mod_name = relative
         .with_extension("")
         .to_string_lossy()
-        .replace(['/', '\\'], "::");
+        .replace(['/', '\\'], "_");
 
-    for cap in re.captures_iter(&content) {
+    let crate_name_clean = crate_name.replace('-', "_");
+    let module_path = format!("{}::{}", crate_name_clean, mod_name);
+
+    // Scan for #[client]
+    let client_re =
+        Regex::new(r#"#\[(?:[\w:]+::)?client\]\s*(?:pub(?:\([^)]+\))?\s+)?fn\s+(\w+)"#).unwrap();
+    for cap in client_re.captures_iter(&content) {
+        let fn_name = cap[1].to_string();
+        let full_path = format!("{}::{}", module_path, fn_name);
+        client_fns.push(ClientFunction {
+            hashed_id: hash_id(&full_path),
+            full_path,
+            fn_name,
+        });
+    }
+
+    // Scan for #[server]
+    let server_re = Regex::new(
+        r#"#\[(?:[\w:]+::)?server\]\s*(?:pub(?:\([^)]+\))?\s+)?async\s+fn\s+(\w+)\s*\(([^)]*)\)"#,
+    )
+    .unwrap();
+    for cap in server_re.captures_iter(&content) {
         let fn_name = cap[1].to_string();
         let args_raw = &cap[2];
 
@@ -75,23 +141,24 @@ fn scan_file(file_path: &Path, src_root: &Path, functions: &mut Vec<ServerFuncti
         };
 
         let full_path = format!("{}::{}", module_path, fn_name);
-        functions.push(ServerFunction {
+        server_fns.push(ServerFunction {
+            hashed_id: hash_id(&full_path),
             full_path,
             fn_name,
             args_type,
         });
     }
+
     Ok(())
 }
 
 pub fn generate_rpc_dispatcher(
     project_dir: &Path,
-    project_name: &str,
+    _project_name: &str,
     functions: &[ServerFunction],
 ) -> Result<()> {
     let lithe_dir = project_dir.join(".lithe");
     let mut output = String::new();
-    let crate_name = project_name.replace('-', "_");
 
     output.push_str("// Auto-generated by lithe-cli - do not edit manually\n");
     output.push_str("use axum::{Json, response::IntoResponse, http::StatusCode};\n");
@@ -102,27 +169,21 @@ pub fn generate_rpc_dispatcher(
     output.push_str("    let result = match req.function.as_str() {\n");
 
     for func in functions {
-        let js_name = func.full_path.replace("::", "_");
-        let internal_fn = format!("__lithe_rpc_{}", func.fn_name);
-
-        output.push_str(&format!(
-            "        \"{}\" | \"{}\" => {{\n",
-            func.fn_name, js_name
-        ));
+        output.push_str(&format!("        \"{}\" => {{\n", func.hashed_id));
         output.push_str(&format!(
             "            let args: {} = serde_json::from_value(req.args).unwrap();\n",
             func.args_type
         ));
 
-        let mod_path = func
-            .full_path
-            .strip_suffix(&func.fn_name)
-            .unwrap()
-            .trim_end_matches("::");
+        let internal_fn = format!("__lithe_rpc_wrapper_{}", func.fn_name);
 
         output.push_str(&format!(
-            "            {}::{}::{}(args).await\n",
-            crate_name, mod_path, internal_fn
+            "            {}::{}(args).await\n",
+            func.full_path
+                .strip_suffix(&func.fn_name)
+                .unwrap()
+                .trim_end_matches("::"),
+            internal_fn
         ));
         output.push_str("        }\n");
     }
@@ -136,5 +197,40 @@ pub fn generate_rpc_dispatcher(
     output.push_str("}\n");
 
     fs::write(lithe_dir.join("rpc.rs"), output).context("Failed to write .lithe/rpc.rs")?;
+    Ok(())
+}
+
+pub fn generate_wasm_exports(
+    project_dir: &Path,
+    crate_name: &str,
+    client_fns: &[ClientFunction],
+    _server_fns: &[ServerFunction],
+) -> Result<()> {
+    let lithe_dir = project_dir.join(".lithe");
+    let mut output = String::new();
+    output.push_str("// Auto-generated by lithe-cli - do not edit manually\n");
+    output.push_str("use wasm_bindgen::prelude::*;\n\n");
+
+    let crate_prefix = format!("{}::", crate_name.replace('-', "_"));
+
+    for func in client_fns {
+        // Strip crate name from full_path for crate:: access
+        let relative_path = func
+            .full_path
+            .strip_prefix(&crate_prefix)
+            .unwrap_or(&func.full_path);
+
+        output.push_str(&format!(
+            r#"#[wasm_bindgen(js_name = "{}")]
+pub fn __wasm_export_{}() {{
+    crate::{}();
+}}
+"#,
+            func.hashed_id, func.hashed_id, relative_path
+        ));
+    }
+
+    fs::write(lithe_dir.join("wasm_exports.rs"), output)
+        .context("Failed to write .lithe/wasm_exports.rs")?;
     Ok(())
 }

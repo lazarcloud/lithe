@@ -1,11 +1,24 @@
+//! Browser API wrappers that work on WASM and are no-ops on the server.
+
+use serde::{de::DeserializeOwned, Serialize};
+
+/// Deterministic stable hashing for IDs
+pub fn hash_id(path: &str) -> String {
+    let mut hash: u64 = 5381;
+    for c in path.bytes() {
+        hash = ((hash << 5).wrapping_add(hash)).wrapping_add(c as u64);
+    }
+    format!("f_{:x}", hash)
+}
+
+/// Shows an alert dialog with the given message.
 #[inline]
 pub fn alert(message: &str) {
     #[cfg(target_arch = "wasm32")]
     {
-        web_sys::window()
-            .expect("no window")
-            .alert_with_message(message)
-            .expect("alert failed");
+        if let Some(window) = web_sys::window() {
+            let _ = window.alert_with_message(message);
+        }
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -13,6 +26,7 @@ pub fn alert(message: &str) {
     }
 }
 
+/// Logs a message to the browser console.
 #[inline]
 pub fn console_log(message: &str) {
     #[cfg(target_arch = "wasm32")]
@@ -25,27 +39,74 @@ pub fn console_log(message: &str) {
     }
 }
 
-#[inline]
-pub fn console_warn(message: &str) {
+/// Calls a server function from the client.
+pub async fn call_server<Args, Ret>(full_path: &str, args: Args) -> Ret
+where
+    Args: Serialize,
+    Ret: DeserializeOwned + Default,
+{
     #[cfg(target_arch = "wasm32")]
     {
-        web_sys::console::warn_1(&message.into());
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let _ = message;
-    }
-}
+        use crate::rpc::{RpcRequest, RpcResponse};
+        use wasm_bindgen::JsCast;
+        use web_sys::{Request, RequestInit, RequestMode, Response};
 
-#[inline]
-pub fn console_error(message: &str) {
-    #[cfg(target_arch = "wasm32")]
-    {
-        web_sys::console::error_1(&message.into());
+        let hashed_id = hash_id(full_path);
+        web_sys::console::log_1(&format!("RPC Call: {} -> {}", full_path, hashed_id).into());
+
+        let args_value = serde_json::to_value(args).unwrap();
+        let rpc_req = RpcRequest {
+            function: hashed_id,
+            args: args_value,
+        };
+        let body = serde_json::to_string(&rpc_req).unwrap();
+
+        let opts = RequestInit::new();
+        opts.set_method("POST");
+        opts.set_mode(RequestMode::Cors);
+        opts.set_body(&js_sys::JsString::from(body));
+
+        let request = Request::new_with_str_and_init("/api/lithe-rpc", &opts).unwrap();
+        request
+            .headers()
+            .set("Content-Type", "application/json")
+            .unwrap();
+
+        let window = web_sys::window().unwrap();
+        let resp_value = match wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request)).await {
+            Ok(v) => v,
+            Err(e) => {
+                web_sys::console::error_1(&format!("Fetch error: {:?}", e).into());
+                return Ret::default();
+            }
+        };
+        
+        let resp: Response = resp_value.dyn_into().unwrap();
+        if !resp.ok() {
+             web_sys::console::error_1(&format!("RPC failed with status: {}. Path: {}", resp.status(), full_path).into());
+             return Ret::default();
+        }
+
+        let text_value = wasm_bindgen_futures::JsFuture::from(resp.text().unwrap()).await.unwrap();
+        let text = text_value.as_string().unwrap();
+        
+        let rpc_res: RpcResponse = match serde_json::from_str(&text) {
+            Ok(r) => r,
+            Err(e) => {
+                web_sys::console::error_1(&format!("Failed to parse RPC response: {:?}. Text: {}", e, text).into());
+                return Ret::default();
+            }
+        };
+
+        serde_json::from_value(rpc_res.result).unwrap_or_else(|e| {
+            web_sys::console::error_1(&format!("Failed to deserialize RPC result: {:?}", e).into());
+            Ret::default()
+        })
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let _ = message;
+        let _ = (full_path, args);
+        panic!("call_server should only be called from WASM")
     }
 }
 
@@ -88,7 +149,7 @@ pub fn set_inner_html(id: &str, html: &str) {
     #[cfg(target_arch = "wasm32")]
     {
         if let Some(el) = get_element_by_id(id) {
-            el.set_inner_html(html);
+            let _ = el.set_inner_html(html);
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
@@ -107,57 +168,5 @@ pub fn get_inner_html(id: &str) -> Option<String> {
     {
         let _ = id;
         None
-    }
-}
-
-pub async fn call_server<Args, Ret>(fn_name: &str, args: Args) -> Ret
-where
-    Args: serde::Serialize,
-    Ret: serde::de::DeserializeOwned,
-{
-    #[cfg(target_arch = "wasm32")]
-    {
-        use crate::rpc::{RpcRequest, RpcResponse};
-        use wasm_bindgen::JsCast;
-        use web_sys::{Request, RequestInit, RequestMode, Response};
-
-        let args_value = serde_json::to_value(args).unwrap();
-        let rpc_req = RpcRequest {
-            function: fn_name.to_string(),
-            args: args_value,
-        };
-        let body = serde_json::to_string(&rpc_req).unwrap();
-
-        let opts = RequestInit::new();
-        opts.set_method("POST");
-        opts.set_mode(RequestMode::Cors);
-        opts.set_body(&js_sys::JsString::from(body));
-
-        let request = Request::new_with_str_and_init("/api/lithe-rpc", &opts).unwrap();
-        request
-            .headers()
-            .set("Content-Type", "application/json")
-            .unwrap();
-
-        let window = web_sys::window().unwrap();
-        let resp_value = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request))
-            .await
-            .unwrap();
-        let resp: Response = resp_value.dyn_into().unwrap();
-
-        let text = wasm_bindgen_futures::JsFuture::from(resp.text().unwrap())
-            .await
-            .unwrap()
-            .as_string()
-            .unwrap();
-        let rpc_res: RpcResponse =
-            serde_json::from_str(&text).expect("Failed to parse RPC response");
-
-        serde_json::from_value(rpc_res.result).expect("Failed to deserialize result")
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let _ = (fn_name, args);
-        unreachable!("call_server should only be called from WASM")
     }
 }

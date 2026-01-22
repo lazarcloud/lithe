@@ -2,21 +2,24 @@
 use lithe::render_page;
 
 #[path = "../src/pages/index.rs"]
-mod index_page;
+mod pages_index;
 #[path = "../src/pages/about.rs"]
-mod about_page;
+mod pages_about;
 #[path = "../src/pages/contact.rs"]
-mod contact_page;
+mod pages_contact;
+#[path = "../src/pages/test.rs"]
+mod pages_test;
 
 pub fn dispatch(path: &str) -> String {
     match path {
-        "/" => render_page(index_page::page(), "rust"),
-        "/about" => render_page(about_page::page(), "rust"),
-        "/contact" => render_page(contact_page::page(), "rust"),
+        "/" => render_page(pages_index::page(), "rust", "{\"h_81a67f04dbed7ce2\":\"f_c4ff90b18223fb0c\",\"h_d0a7df551ec396b1\":\"f_b72c3ddf4f1e0d3b\",\"h_a9aebf0743e28893\":\"f_1090703e697e515d\",\"h_acb981a73002a620\":\"f_1090703e697e515d\",\"h_53460cb959796a1d\":\"f_a563c899522b1e7\",\"h_b6765fa078b285c4\":\"f_64f1a6e1e5b8c92e\"}"),
+        "/about" => render_page(pages_about::page(), "rust", "{\"h_53460cb959796a1d\":\"f_a563c899522b1e7\",\"h_b6765fa078b285c4\":\"f_64f1a6e1e5b8c92e\",\"h_a9aebf0743e28893\":\"f_1090703e697e515d\",\"h_d0a7df551ec396b1\":\"f_b72c3ddf4f1e0d3b\",\"h_81a67f04dbed7ce2\":\"f_c4ff90b18223fb0c\"}"),
+        "/contact" => render_page(pages_contact::page(), "rust", "{\"h_53460cb959796a1d\":\"f_a563c899522b1e7\",\"h_a9aebf0743e28893\":\"f_1090703e697e515d\",\"h_81a67f04dbed7ce2\":\"f_c4ff90b18223fb0c\",\"h_b6765fa078b285c4\":\"f_64f1a6e1e5b8c92e\",\"h_d0a7df551ec396b1\":\"f_b72c3ddf4f1e0d3b\"}"),
+        "/test" => render_page(pages_test::page(), "rust", "{\"h_81a67f04dbed7ce2\":\"f_c4ff90b18223fb0c\",\"h_a9aebf0743e28893\":\"f_1090703e697e515d\",\"h_1491e29eb461c5a7\":\"f_c4ff90b18223fb0c\",\"h_d0a7df551ec396b1\":\"f_b72c3ddf4f1e0d3b\",\"h_53460cb959796a1d\":\"f_a563c899522b1e7\",\"h_b6765fa078b285c4\":\"f_64f1a6e1e5b8c92e\",\"h_a6ce36755fafe729\":\"f_64f1a6e1e5b8c92e\"}"),
         _ => "404 Not Found".to_string(),
     }
 }
 
 pub fn routes() -> Vec<&'static str> {
-    vec!["/", "/about", "/contact"]
+    vec!["/", "/about", "/contact", "/test"]
 }

@@ -7,7 +7,6 @@ mod dev;
 mod generate;
 mod init;
 mod server;
-mod wasm;
 
 #[derive(Serialize, Deserialize)]
 struct AppConfig {

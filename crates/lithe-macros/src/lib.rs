@@ -6,6 +6,14 @@ use syn::{
     Block, Expr, ExprMethodCall, ExprPath, FnArg, ItemFn, Pat, ReturnType,
 };
 
+fn stable_hash(s: &str) -> String {
+    let mut hash: u64 = 5381;
+    for c in s.bytes() {
+        hash = ((hash << 5).wrapping_add(hash)).wrapping_add(c as u64);
+    }
+    format!("{:x}", hash)
+}
+
 #[proc_macro_attribute]
 pub fn client(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);
@@ -24,7 +32,6 @@ pub fn server(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let inputs = &input_fn.sig.inputs;
     let output = &input_fn.sig.output;
 
-    // Extract argument names and types
     let mut arg_names = Vec::new();
     let mut arg_types = Vec::new();
 
@@ -51,17 +58,17 @@ pub fn server(_attr: TokenStream, item: TokenStream) -> TokenStream {
         quote! { let (#(#arg_names),*) = args; }
     };
 
-    let internal_fn_name = syn::Ident::new(
-        &format!("__lithe_rpc_{}", fn_name),
-        proc_macro2::Span::call_site(),
-    );
-
-    let fn_name_str = fn_name.to_string();
-
     let output_type = match output {
         ReturnType::Default => quote! { () },
         ReturnType::Type(_, ty) => quote! { #ty },
     };
+
+    let internal_rpc_wrapper = syn::Ident::new(
+        &format!("__lithe_rpc_wrapper_{}", fn_name),
+        proc_macro2::Span::call_site(),
+    );
+
+    let fn_name_str = fn_name.to_string();
 
     let expanded = quote! {
         #[cfg(not(target_arch = "wasm32"))]
@@ -69,11 +76,9 @@ pub fn server(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
         #[cfg(not(target_arch = "wasm32"))]
         #[allow(dead_code)]
-        pub async fn #internal_fn_name(args: #args_tuple_type) -> ::lithe::serde_json::Value {
-            // Compile-time check for Serialize
+        pub async fn #internal_rpc_wrapper(args: #args_tuple_type) -> ::lithe::serde_json::Value {
             fn _check_serialize<T: ::lithe::serde::Serialize>() {}
             _check_serialize::<#output_type>();
-
             #args_unpack
             let res = #fn_name(#(#arg_names),*).await;
             ::lithe::serde_json::to_value(res).expect("Failed to serialize RPC result")
@@ -82,7 +87,8 @@ pub fn server(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[cfg(target_arch = "wasm32")]
         #[allow(dead_code)]
         #visibility async fn #fn_name(#inputs) #output {
-            ::lithe::browser::call_server(#fn_name_str, (#(#arg_names),*)).await
+            let full_path = concat!(module_path!(), "::", stringify!(#fn_name));
+            ::lithe::browser::call_server(full_path, (#(#arg_names),*)).await
         }
     };
 
@@ -103,24 +109,19 @@ impl VisitMut for OnClickVisitor {
             let arg = &node.args[0];
 
             match arg {
-                // Case 1: on_click(handle_click) - Path to a function
                 Expr::Path(ExprPath { path, .. }) => {
-                    let mut filtered = Vec::new();
-                    for seg in &path.segments {
-                        let s = seg.ident.to_string();
-                        if s != "crate" && s != "super" && s != "self" {
-                            filtered.push(s);
-                        }
-                    }
-                    let path_str = filtered.join("_");
-                    let final_str = format!("Lithe.dispatch('{}')", path_str);
-                    let new_arg: Expr = parse_quote!(#final_str);
+                    let path_str = quote!(#path).to_string().replace(" ", "");
+                    let symbolic_hash = stable_hash(&path_str);
+                    let dispatch_str = format!("Lithe.dispatch('h_{}')", symbolic_hash);
+                    let new_arg: Expr = parse_quote!(#dispatch_str);
                     node.args[0] = new_arg;
                 }
-                // Case 2: on_click(|| { ... }) - Closure
                 Expr::Closure(closure) => {
                     self.count += 1;
-                    let handler_name = format!("{}_anon_{}", self.base_name, self.count);
+
+                    let body_str = quote!(#closure).to_string();
+                    let hash = stable_hash(&body_str);
+                    let handler_name = format!("{}_anon_{}_{}", self.base_name, self.count, hash);
                     let handler_ident =
                         syn::Ident::new(&handler_name, proc_macro2::Span::call_site());
 
