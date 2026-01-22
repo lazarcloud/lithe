@@ -1,12 +1,18 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    Expr, ExprMethodCall, ExprPath, ItemFn, parse_macro_input,
+    parse_macro_input,
     visit_mut::{self, VisitMut},
+    Expr, ExprMethodCall, ExprPath, ItemFn,
 };
 #[proc_macro_attribute]
 pub fn client(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    item
+    let input = parse_macro_input!(item as ItemFn);
+    let expanded = quote! {
+        #[allow(dead_code)]
+        #input
+    };
+    TokenStream::from(expanded)
 }
 struct OnClickVisitor;
 impl VisitMut for OnClickVisitor {

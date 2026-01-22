@@ -1,4 +1,4 @@
-use lithe::{a, button, client, div, h1, p, page, Component, HtmlPage};
+use lithe::{Component, HtmlPage, a, button, client, div, h1, p, page};
 
 #[client]
 pub fn handle_click() {
@@ -19,7 +19,7 @@ pub fn page() -> impl Component {
         )
         .with_child(
             button()
-                .on_click(pages::index::handle_click)
+                .on_click(handle_click)
                 .with_child("Click Me (WASM)"),
         )
         .with_child(

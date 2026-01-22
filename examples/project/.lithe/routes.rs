@@ -10,9 +10,9 @@ mod contact_page;
 
 pub fn dispatch(path: &str) -> String {
     match path {
-        "/" => render_page(index_page::page(), "rust2"),
-        "/about" => render_page(about_page::page(), "rust2"),
-        "/contact" => render_page(contact_page::page(), "rust2"),
+        "/" => render_page(index_page::page(), "rust"),
+        "/about" => render_page(about_page::page(), "rust"),
+        "/contact" => render_page(contact_page::page(), "rust"),
         _ => "404 Not Found".to_string(),
     }
 }
