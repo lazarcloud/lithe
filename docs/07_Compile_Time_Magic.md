@@ -21,3 +21,19 @@ ui.add(text(t!("welcome_message")));
 
 ## 3. Resumability Serialization
 The compiler automatically generates the serialization logic for your `#[island]` props, ensuring that the transition from static HTML to interactive WASM is seamless and zero-config.
+
+## 4. Prop Validation
+Lithe components use procedural macros to enforce strict prop validation at compile time. If a required prop is missing or of the wrong type, the project will not compile.
+
+```rust
+#[component]
+fn UserProfile(
+    #[prop(required)] name: String,
+    #[prop(default = 18)] age: u32,
+) -> View {
+    div().child(text(name))
+}
+
+// COMPILE ERROR: Missing required prop 'name'
+// ui.add(UserProfile { age: 25 }); 
+```

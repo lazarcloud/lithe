@@ -37,3 +37,25 @@ action.execute_optimistic(|state| {
 });
 // If the server call fails, Lithe automatically rolls back the signal.
 ```
+
+## 5. Observables (Streams)
+For complex data flows that are time-dependent, Lithe integrates Observables. Unlike Signals which represent a value, Observables represent a stream of events.
+```rust
+let search_results = search_input
+    .as_observable()
+    .debounce(Duration::from_millis(300))
+    .switch_map(|query| fetch_results(query));
+```
+
+## 6. State Machines
+Formalize complex UI logic using Finite State Machines. This prevents "impossible states" and makes transitions predictable.
+```rust
+let machine = create_machine(VideoPlayer {
+    state: Idle,
+    transitions: [
+        (Idle, Play) => Playing,
+        (Playing, Pause) => Paused,
+        (Paused, Play) => Playing,
+    ]
+});
+```

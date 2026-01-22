@@ -58,6 +58,8 @@ This roadmap is structured into **Functional Milestones**. After each milestone,
 - [ ] **6.3 Optimistic UI:** `action.execute_optimistic()` with rollback on failure.
 - [ ] **6.4 Telepathy:** WebSocket-based real-time signal syncing.
 - [ ] **6.5 Asset Pipeline:** `img!` and `svg!` compile-time optimization.
+- [ ] **6.6 Observables:** Integration with stream-based reactivity for complex data flows.
+- [ ] **6.7 State Machines:** Formalized state transitions for predictable UI logic.
 - **Outcome:** A full-featured, competitive Rust alternative to Next.js or Astro.
 
 ## Milestone 7: Ecosystem & Distribution
@@ -65,5 +67,6 @@ This roadmap is structured into **Functional Milestones**. After each milestone,
 
 - [ ] **7.1 The `lithe` CLI:** Finalize `init`, `dev` (with HMR), and `build`.
 - [ ] **7.2 NPM/Bun Wrapper:** Publish the platform-specific binary wrappers.
-- [ ] **7.3 Documentation:** Generate the "Lithe.rs Book" and API references.
+- [ ] **7.3 Prop Validation:** Compile-time validation of component props and requirements.
+- [ ] **7.4 Documentation:** Generate the "Lithe.rs Book" and API references.
 - **Outcome:** Users can `bun install @lithe/cli` and start building apps instantly.
